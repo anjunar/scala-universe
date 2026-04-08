@@ -258,3 +258,65 @@ Run the test suite with:
 ```bash
 sbt test
 ```
+
+## Publishing to Maven Central
+
+This project is configured for the Sonatype Central Portal, not the legacy OSSRH flow.
+
+Required project settings live in [`build.sbt`](build.sbt):
+
+- POM metadata such as `homepage`, `description`, `licenses`, `scmInfo`, and `developers`
+- `versionScheme := Some("early-semver")`
+- `pomIncludeRepository := { _ => false }`
+- `publishMavenStyle := true`
+- `publishTo := if (isSnapshot.value) Some("central-snapshots" at "https://central.sonatype.com/repository/maven-snapshots/") else localStaging.value`
+
+The project also uses [`project/plugins.sbt`](project/plugins.sbt) with:
+
+```scala
+addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
+```
+
+### Local machine setup
+
+Credentials are intentionally kept outside the repository.
+
+Create `~/.sbt/1.0/credentials.sbt` with:
+
+```scala
+credentials += Credentials(Path.userHome / ".sbt" / "sonatype_central_credentials")
+```
+
+Create `~/.sbt/sonatype_central_credentials` with:
+
+```properties
+host=central.sonatype.com
+user=<sonatype-user>
+password=<sonatype-token>
+```
+
+### Release commands
+
+From sbt:
+
+```bash
+sbt publishSigned
+sbt sonaUpload
+sbt sonaRelease
+```
+
+On Windows, use [`scripts/release-central.ps1`](scripts/release-central.ps1) so `gpg.exe` is available in the current process `PATH`:
+
+```powershell
+.\scripts\release-central.ps1 publishSigned
+.\scripts\release-central.ps1 sonaUpload
+.\scripts\release-central.ps1 sonaRelease
+```
+
+### Notes
+
+- `publishSigned` stages and signs artifacts locally.
+- `sonaUpload` uploads the bundle to the Sonatype Central Portal.
+- `sonaRelease` uploads and publishes in one step.
+- A newly uploaded public key may take some time to propagate before Sonatype accepts signatures.
+- Use `publish / skip := true` only for a non-published aggregator root in a multi-module build. This repository is currently single-module, so the root project remains publishable.
