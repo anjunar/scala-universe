@@ -1,13 +1,26 @@
 # scala-universe
 
-`scala-universe` is a small reflection and introspection library for Scala and Java types on the JVM.
-It wraps low-level reflection APIs in a more convenient model built around:
+`scala-universe` is a JVM-based type introspection library providing a structured and resolved view of classes, generics, and annotations.
 
-- resolved classes and generic type information
-- resolved fields, methods, constructors, and parameters
+It wraps low-level reflection APIs in a higher-level model built around:
+
+- fully resolved types
+- unified access to fields, methods, constructors, and parameters
+- proper generic type resolution
 - bean-style property introspection
 - annotation-driven property introspection
 - classpath scanning with an annotation index
+
+## Why this library?
+
+Java reflection is often:
+
+- low-level
+- inconsistent with generics
+- difficult to compose
+- hard to reason about
+
+`scala-universe` provides a cleaner abstraction layer for runtime introspection on the JVM.
 
 ## Features
 
@@ -24,6 +37,16 @@ Add the dependency to your `build.sbt`:
 
 ```scala
 libraryDependencies += "com.anjunar" %% "scala-universe" % "1.0.0"
+```
+
+## Example
+
+```scala
+import com.anjunar.scala.universe.TypeResolver
+
+class User(val id: Long, val name: String)
+
+val clazz = TypeResolver.resolve(classOf[User])
 ```
 
 ## Quick Start
@@ -95,6 +118,16 @@ val method = resolved.findMethod("getValue")
 
 println(method.returnType.raw) // class java.lang.String
 ```
+
+## Core Idea
+
+Instead of working directly with:
+
+- raw `Class`
+- `Type`
+- `ParameterizedType`
+
+You work with a clean, unified abstraction layer centered around `ResolvedClass` and the related member models.
 
 ## Bean Introspection
 
@@ -203,6 +236,20 @@ println(services.size)
 - `BeanIntrospector` / `BeanModel`: bean-style property model
 - `AnnotationIntrospector` / `AnnotationModel`: annotation-driven property model
 - `ClassPathResolver`: package scanning and annotation indexing
+
+## When should you use it?
+
+Use `scala-universe` if:
+
+- you build frameworks or infrastructure
+- you need reliable generic type handling
+- you want a structured reflection model
+
+## Positioning
+
+- vs Java Reflection: higher-level and easier to reason about
+- vs `scala-reflect`: runtime-focused instead of compile-time-focused
+- vs frameworks such as Spring: explicit model without hidden magic
 
 ## Development
 
