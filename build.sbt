@@ -29,7 +29,7 @@ ThisBuild / publishTo := {
   else localStaging.value
 }
 
-lazy val root = (project in file("."))
+lazy val root = Project(id = "scala-universe", base = file("."))
   .settings(
     name := "scala-universe",
     moduleName := "scala-universe",
