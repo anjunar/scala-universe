@@ -1,4 +1,4 @@
-ThisBuild / version := "1.0.1-SNAPSHOT"
+ThisBuild / version := "1.0.2"
 ThisBuild / organization := "com.anjunar"
 ThisBuild / organizationName := "Anjunar"
 ThisBuild / organizationHomepage := Some(url("https://github.com/anjunar"))
@@ -34,7 +34,7 @@ lazy val root = Project(id = "scala-universe-root", base = file("."))
     name := "scala-universe",
     moduleName := "scala-universe",
     libraryDependencies ++= Seq(
-      "com.anjunar" % "scala-reflect_3" % "1.1.1-SNAPSHOT",
+      "com.anjunar" % "scala-reflect_3" % "1.1.2",
       "com.google.guava" % "guava" % "33.5.0-jre",
       "jakarta.enterprise" % "jakarta.enterprise.cdi-api" % "4.1.0",
       "ch.qos.logback" % "logback-classic" % "1.5.32",
