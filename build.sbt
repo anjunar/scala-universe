@@ -1,8 +1,8 @@
-ThisBuild / version := "1.0.2"
+ThisBuild / version := "1.0.3"
 ThisBuild / organization := "com.anjunar"
 ThisBuild / organizationName := "Anjunar"
 ThisBuild / organizationHomepage := Some(url("https://github.com/anjunar"))
-ThisBuild / scalaVersion := "3.3.7"
+ThisBuild / scalaVersion := "3.3.8"
 ThisBuild / homepage := Some(url("https://github.com/anjunar/scala-universe"))
 ThisBuild / description := "A JVM-based type introspection library for classes, generics, annotations, and bean-style property models."
 ThisBuild / licenses := List("MIT" -> url("https://opensource.org/licenses/MIT"))
@@ -34,7 +34,7 @@ lazy val root = Project(id = "scala-universe-root", base = file("."))
     name := "scala-universe",
     moduleName := "scala-universe",
     libraryDependencies ++= Seq(
-      "com.anjunar" % "scala-reflect_3" % "1.1.2",
+      "com.anjunar" % "scala-reflect_3" % "1.1.3",
       "com.google.guava" % "guava" % "33.5.0-jre",
       "jakarta.enterprise" % "jakarta.enterprise.cdi-api" % "4.1.0",
       "ch.qos.logback" % "logback-classic" % "1.5.32",

@@ -36,7 +36,7 @@ Java reflection is often:
 Add the dependency to your `build.sbt`:
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scala-universe" % "1.0.2"
+libraryDependencies += "com.anjunar" %% "scala-universe" % "1.0.3"
 ```
 
 ## Example
