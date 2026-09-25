@@ -1,322 +1,127 @@
-# scala-universe
+# Scala Universe
 
-`scala-universe` is a JVM-based type introspection library providing a structured and resolved view of classes, generics, and annotations.
+A structured view of classes at runtime. Types are resolved once, generics are bound to the concrete subclass, and
+fields, methods and annotations share one model.
 
-It wraps low-level reflection APIs in a higher-level model built around:
+| Version | Platform | Scala | License |
+| --- | --- | --- | --- |
+| 1.0.4 | JVM | 3.3 | MIT |
 
-- fully resolved types
-- unified access to fields, methods, constructors, and parameters
-- proper generic type resolution
-- bean-style property introspection
-- annotation-driven property introspection
-- classpath scanning with an annotation index
-
-## Why this library?
-
-Java reflection is often:
-
-- low-level
-- inconsistent with generics
-- difficult to compose
-- hard to reason about
-
-`scala-universe` provides a cleaner abstraction layer for runtime introspection on the JVM.
-
-## Features
-
-- Resolve a `java.lang.reflect.Type` into a reusable `ResolvedClass`
-- Inspect class hierarchies with generic type resolution
-- Find fields, methods, constructors, and parameters in a consistent way
-- Access bean properties through getter/setter conventions
-- Build property models from annotations
-- Scan a package and index discovered annotations
+Documentation: [English](https://docs.anjunar.com/en/scala-universe) · [Deutsch](https://docs.anjunar.com/de/scala-universe)
+Website: [English](https://anjunar.com/en/scala-universe) · [Deutsch](https://anjunar.com/de/scala-universe)
 
 ## Installation
 
-Add the dependency to your `build.sbt`:
+One artifact for the JVM. It brings Guava's `TypeToken` for generic resolution and the CDI API for the optional
+class path extension.
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scala-universe" % "1.0.3"
+libraryDependencies += "com.anjunar" %% "scala-universe" % "1.0.4"
 ```
 
-## Example
+## First example
 
-```scala
-import com.anjunar.scala.universe.TypeResolver
-
-class User(val id: Long, val name: String)
-
-val clazz = TypeResolver.resolve(classOf[User])
-```
-
-## Quick Start
-
-### Resolve a class
+The field is declared as `List[E]` in the base class. Resolved through the subclass, it is a `List[User]` – the
+generic type plain Java reflection forgets.
 
 ```scala
 import com.anjunar.scala.universe.TypeResolver
 
-val resolved = TypeResolver.resolve(classOf[String])
-
-println(resolved.name)      // String
-println(resolved.fullName)  // java.lang.String
-println(resolved.raw)       // class java.lang.String
-```
-
-### Inspect fields and methods
-
-```scala
-import com.anjunar.scala.universe.TypeResolver
-
-class User(private var id: Long, val name: String) {
-  def greeting(prefix: String): String = s"$prefix $name"
+class User
+abstract class Repository[E] {
+  var items: java.util.List[E] = new java.util.ArrayList[E]()
 }
+class UserRepository extends Repository[User]
 
-val userClass = TypeResolver.resolve(classOf[User])
+val repository = TypeResolver.resolve(classOf[UserRepository])
+val items = repository.findField("items").fieldType
 
-val field = userClass.findField("name")
-println(field.name)               // name
-println(field.fieldType.fullName) // java.lang.String
-
-val method = userClass.findMethod("greeting", classOf[String])
-println(method.name)                  // greeting
-println(method.returnType.fullName)   // java.lang.String
-println(method.parameters.head.name)  // prefix
+println(items.name)                  // List
+println(items.typeArguments(0).name) // User
 ```
 
-### Work with constructors and invocation
+## The principle
 
-```scala
-import com.anjunar.scala.universe.TypeResolver
+**01 / Resolve – One model per type.** `TypeResolver` turns any `java.lang.reflect.Type` into a cached
+`ResolvedClass`: raw class, type arguments and hierarchy.
 
-class User(val id: Long, val name: String)
+**02 / Bind – Generics seen from the subclass.** Field types, return types and parameter types of inherited members
+are resolved against the type you started from.
 
-val resolved = TypeResolver.resolve(classOf[User])
-val constructor = resolved.findDeclaredConstructor(classOf[Long], classOf[String])
+**03 / Describe – Properties instead of members.** Bean and annotation introspectors join field, getter and setter
+into one property with the annotations of all three.
 
-val user = constructor.newInstance(Long.box(1L), "Ada").asInstanceOf[User]
-println(user.name) // Ada
-```
+[JSON Mapper](https://github.com/anjunar/json-mapper) uses Scala Universe as its type layer: it resolves every class
+through `TypeResolver`, reads `@JsonbProperty` members through `AnnotationIntrospector` and finds schemas through
+`companionInstance`.
 
-## Generic Type Resolution
+## Contents
 
-One of the main benefits of the library is that inherited generic members are resolved against the concrete subtype.
+**Types**
+- [Resolving types](https://docs.anjunar.com/en/scala-universe/resolving) – `TypeResolver` and `ResolvedClass`: one model for every kind of `Type`
+- [Hierarchy and subtypes](https://docs.anjunar.com/en/scala-universe/hierarchy) – superclasses and interfaces, resolved, and subtype checks with generics
+- [Generics](https://docs.anjunar.com/en/scala-universe/generics) – inherited members typed by the subclass, not by the declaration
+- [Caching and identity](https://docs.anjunar.com/en/scala-universe/caching) – one instance per type, equality by type, and what that means for threads
 
-```scala
-import com.anjunar.scala.universe.TypeResolver
+**Members**
+- [Fields](https://docs.anjunar.com/en/scala-universe/fields) – declared and inherited fields, hiding, types and access
+- [Methods](https://docs.anjunar.com/en/scala-universe/methods) – overrides, bridges, return types and invocation
+- [Constructors and parameters](https://docs.anjunar.com/en/scala-universe/constructors) – creating instances, and parameters with names, types and annotations
+- [Annotations](https://docs.anjunar.com/en/scala-universe/annotations) – where annotations are looked up, and which ones are inherited
 
-abstract class Box[T] {
-  def getValue: T
-}
+**Introspection**
+- [Bean properties](https://docs.anjunar.com/en/scala-universe/beans) – properties from getters and setters, the JavaBean way
+- [Annotated properties](https://docs.anjunar.com/en/scala-universe/annotated-properties) – properties chosen by an annotation, Scala accessors included
+- [Companions and class path](https://docs.anjunar.com/en/scala-universe/discovery) – Scala companion objects, and an annotation index over a package
 
-class StringBox extends Box[String] {
-  override def getValue: String = "hello"
-}
+**In practice**
+- [A small mapper](https://docs.anjunar.com/en/scala-universe/mapper) – objects to maps and back, in twenty lines on top of the introspector
+- [Commands by annotation](https://docs.anjunar.com/en/scala-universe/commands) – find annotated methods, describe their parameters and call them by name
 
-val resolved = TypeResolver.resolve(classOf[StringBox])
-val method = resolved.findMethod("getValue")
+**Reference**
+- [API](https://docs.anjunar.com/en/scala-universe/api) – every type and member of Scala Universe at a glance
 
-println(method.returnType.raw) // class java.lang.String
-```
+## Limits
 
-## Core Idea
-
-Instead of working directly with:
-
-- raw `Class`
-- `Type`
-- `ParameterizedType`
-
-You work with a clean, unified abstraction layer centered around `ResolvedClass` and the related member models.
-
-## Bean Introspection
-
-`BeanIntrospector` creates a `BeanModel` based on JavaBean-style getters and setters.
-
-```scala
-import com.anjunar.scala.universe.introspector.BeanIntrospector
-
-class Person {
-  private var firstName: String = "Ada"
-
-  def getFirstName: String = firstName
-  def setFirstName(value: String): Unit = firstName = value
-}
-
-val beanModel = BeanIntrospector.createWithType(classOf[Person])
-val property = beanModel.findProperty("firstName")
-
-val person = new Person
-println(property.propertyType.fullName) // java.lang.String
-println(property.get(person))           // Ada
-
-property.set(person, "Grace")
-println(property.get(person))           // Grace
-```
-
-## Annotation Introspection
-
-`AnnotationIntrospector` builds a property model from annotated fields and methods.
-
-Define a runtime annotation:
-
-```java
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD})
-public @interface Exposed {
-}
-```
-
-Then use it in your model:
-
-```scala
-import com.anjunar.scala.universe.introspector.AnnotationIntrospector
-
-class Account {
-  @Exposed
-  private var owner: String = "Ada"
-
-  @Exposed
-  def getOwner: String = owner
-}
-
-val model = AnnotationIntrospector.createWithType(classOf[Account], classOf[Exposed])
-val property = model.findProperty("owner")
-
-println(property.name)                  // owner
-println(property.propertyType.fullName) // java.lang.String
-```
-
-## Companion Lookup
-
-You can resolve the generated companion class and instance for Scala types.
-
-```scala
-import com.anjunar.scala.universe.TypeResolver
-
-class Service
-object Service
-
-val companionClass = TypeResolver.companionClass(classOf[Service])
-val companion = TypeResolver.companionInstance[Service.type](classOf[Service])
-
-println(companionClass.getName) // Service$
-println(companion eq Service)   // true
-```
-
-## Classpath Scanning
-
-`ClassPathResolver` can scan a package prefix and build an annotation index.
-
-```scala
-import com.anjunar.scala.universe.ClassPathResolver
-
-val classes =
-  ClassPathResolver.process(
-    packagePrefix = "com.example",
-    classLoader = Thread.currentThread().getContextClassLoader
-  )
-
-println(classes.size)
-
-val services = ClassPathResolver.findAnnotation(classOf[jakarta.inject.Singleton])
-println(services.size)
-```
-
-## Main Types
-
-- `TypeResolver`: entry point for resolving `Type` values and Scala companions
-- `ResolvedClass`: resolved view over a class or generic type
-- `ResolvedField`, `ResolvedMethod`, `ResolvedConstructor`, `ResolvedParameter`: member abstractions
-- `BeanIntrospector` / `BeanModel`: bean-style property model
-- `AnnotationIntrospector` / `AnnotationModel`: annotation-driven property model
-- `ClassPathResolver`: package scanning and annotation indexing
-
-## When should you use it?
-
-Use `scala-universe` if:
-
-- you build frameworks or infrastructure
-- you need reliable generic type handling
-- you want a structured reflection model
-
-## Positioning
-
-- vs Java Reflection: higher-level and easier to reason about
-- vs `scala-reflect`: runtime-focused instead of compile-time-focused
-- vs frameworks such as Spring: explicit model without hidden magic
+- JVM only. For compile-time metadata that also works on Scala.js, use
+  [Scala Reflect](https://github.com/anjunar/scala-reflect).
+- Generics are only as concrete as the type you start from. Starting from `Repository[?]` gives a type variable,
+  whose raw class says nothing about its values; start from a concrete class such as `UserRepository`.
+- `constructors` includes the superclasses' constructors, which cannot create the subclass. Use
+  `declaredConstructors` or `findConstructor` to create instances.
+- In 1.0.4 the type, companion and introspector caches are plain hash maps without synchronization. In a server,
+  resolve the types you map during startup, before requests arrive. Reading cached types is safe as long as nothing
+  writes at the same time.
+- `ClassPathResolver.findAnnotation` throws `NoSuchElementException` for an annotation that was never indexed. Run
+  `process`, or let the CDI extension run, before looking anything up.
 
 ## Development
 
-Run the test suite with:
+Requires a JDK and sbt 2. Tests use MUnit.
 
 ```bash
-sbt test
+sbt --server "Test/testOnly *"
 ```
 
-## Publishing to Maven Central
+### Releasing
 
-This project is configured for the Sonatype Central Portal, not the legacy OSSRH flow.
-
-Required project settings live in [`build.sbt`](build.sbt):
-
-- POM metadata such as `homepage`, `description`, `licenses`, `scmInfo`, and `developers`
-- `versionScheme := Some("early-semver")`
-- `pomIncludeRepository := { _ => false }`
-- `publishMavenStyle := true`
-- `publishTo := if (isSnapshot.value) Some("central-snapshots" at "https://central.sonatype.com/repository/maven-snapshots/") else localStaging.value`
-
-The project also uses [`project/plugins.sbt`](project/plugins.sbt) with:
-
-```scala
-addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
-```
-
-### Local machine setup
-
-Credentials are intentionally kept outside the repository.
-
-Create `~/.sbt/1.0/credentials.sbt` with:
-
-```scala
-credentials += Credentials(Path.userHome / ".sbt" / "sonatype_central_credentials")
-```
-
-Create `~/.sbt/sonatype_central_credentials` with:
-
-```properties
-host=central.sonatype.com
-user=<sonatype-user>
-password=<sonatype-token>
-```
-
-### Release commands
-
-From sbt:
-
-```bash
-sbt publishSigned
-sbt sonaUpload
-sbt sonaRelease
-```
-
-On Windows, use [`scripts/release-central.ps1`](scripts/release-central.ps1) so `gpg.exe` is available in the current process `PATH`:
+Set `ThisBuild / version` in `build.sbt`, then sign, bundle and upload to the Sonatype Central Portal in one step.
+Without a version argument the scripts read the one in `build.sbt`, and they wait until Maven Central has published
+the release.
 
 ```powershell
-.\scripts\release-central.ps1 publishSigned
-.\scripts\release-central.ps1 sonaUpload
-.\scripts\release-central.ps1 sonaRelease
+.\scripts\publish-central.ps1
 ```
 
-### Notes
+```bash
+scripts/publish-central.sh
+```
 
-- `publishSigned` stages and signs artifacts locally.
-- `sonaUpload` uploads the bundle to the Sonatype Central Portal.
-- `sonaRelease` uploads and publishes in one step.
-- A newly uploaded public key may take some time to propagate before Sonatype accepts signatures.
-- Use `publish / skip := true` only for a non-published aggregator root in a multi-module build. This repository is currently single-module, so the root project remains publishable.
+Credentials come from `SONATYPE_CENTRAL_USERNAME` and `SONATYPE_CENTRAL_PASSWORD`, or from the lines `user=` and
+`password=` in `~/.sbt/sonatype_central_credentials`. `-PublishingType USER_MANAGED` (`PUBLISHING_TYPE=USER_MANAGED`)
+stops after validation so the release is published by hand in the portal; `-SkipPublishSigned`
+(`SKIP_PUBLISH_SIGNED=1`) uploads an existing staging directory again.
+
+## License
+
+Scala Universe is available under the [MIT License](LICENSE).
