@@ -30,7 +30,8 @@ object ClassPathResolver {
   private val annotations: mutable.Map[Class[? <: Annotation], mutable.Set[ResolvedAnnotation[?]]] =
     new mutable.HashMap[Class[? <: Annotation], mutable.Set[ResolvedAnnotation[?]]]()
 
-  def findAnnotation[A <: Annotation](clazz: Class[A]): mutable.Set[ResolvedAnnotation[A]] = annotations(clazz).asInstanceOf[mutable.Set[ResolvedAnnotation[A]]]
+  def findAnnotation[A <: Annotation](clazz: Class[A]): mutable.Set[ResolvedAnnotation[A]] =
+    annotations(clazz).asInstanceOf[mutable.Set[ResolvedAnnotation[A]]]
 
   def process(packagePrefix: String, classLoader: ClassLoader): Set[ResolvedClass] = {
     val classPath = ClassPath.from(classLoader)
@@ -48,7 +49,6 @@ object ClassPathResolver {
 
     classes
   }
-
 
   private def annotationIndex(classes: Set[ResolvedClass]): Unit = {
     classes.foreach(clazz => {
@@ -91,7 +91,6 @@ object ClassPathResolver {
           })
         })
       })
-
 
     })
   }

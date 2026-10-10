@@ -8,8 +8,10 @@ trait Annotated {
 
   lazy val annotations: Array[Annotation]
 
-  def findAnnotation[A <: Annotation](aClass: Class[A]): A = annotations.find(anno => anno.annotationType() == aClass).orNull.asInstanceOf[A]
+  def findAnnotation[A <: Annotation](aClass: Class[A]): A =
+    annotations.find(anno => anno.annotationType() == aClass).orNull.asInstanceOf[A]
 
-  def findDeclaredAnnotation[A <: Annotation](aClass: Class[A]): A = declaredAnnotations.find(anno => anno.annotationType() == aClass).orNull.asInstanceOf[A]
+  def findDeclaredAnnotation[A <: Annotation](aClass: Class[A]): A =
+    declaredAnnotations.find(anno => anno.annotationType() == aClass).orNull.asInstanceOf[A]
 
 }

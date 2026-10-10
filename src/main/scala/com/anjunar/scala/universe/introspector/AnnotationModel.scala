@@ -26,21 +26,27 @@ class AnnotationModel(val underlying: ResolvedClass, val annotationClass: Class[
 
   private def isGetter(method: ResolvedMethod, propertyName: String): Boolean =
     (method.name == propertyName && method.parameters.length == 0) ||
-      (method.name == s"get${propertyName.substring(0, 1).toUpperCase}${propertyName.substring(1)}" && method.parameters.length == 0) ||
-      (method.name == s"is${propertyName.substring(0, 1).toUpperCase}${propertyName.substring(1)}" && method.parameters.length == 0)
+      (method.name == s"get${propertyName.substring(0, 1).toUpperCase}${propertyName.substring(1)}" &&
+        method.parameters.length == 0) ||
+      (method.name == s"is${propertyName.substring(0, 1).toUpperCase}${propertyName.substring(1)}" &&
+        method.parameters.length == 0)
 
   private def isSetter(method: ResolvedMethod, propertyName: String): Boolean =
     (method.name == (propertyName + "_$eq") && method.parameters.length == 1) ||
-      (method.name == s"set${propertyName.substring(0, 1).toUpperCase}${propertyName.substring(1)}" && method.parameters.length == 1)
+      (method.name == s"set${propertyName.substring(0, 1).toUpperCase}${propertyName.substring(1)}" &&
+        method.parameters.length == 1)
 
   private def isAnnotated(annotated: Annotated): Boolean = {
     annotated.annotations.exists(_.annotationType() == annotationClass)
   }
 
-  private def collectProperties(fields: Array[ResolvedField], methods: Array[ResolvedMethod]): Array[AnnotationProperty] = {
+  private def collectProperties(
+    fields: Array[ResolvedField],
+    methods: Array[ResolvedMethod]
+  ): Array[AnnotationProperty] = {
     val propertyNames = (
       fields.filter(isAnnotated).map(_.name) ++
-      methods.filter(isAnnotated).map(m => getPropertyName(m.name))
+        methods.filter(isAnnotated).map(m => getPropertyName(m.name))
     ).distinct
 
     propertyNames.map { name =>
@@ -51,7 +57,8 @@ class AnnotationModel(val underlying: ResolvedClass, val annotationClass: Class[
     }
   }
 
-  lazy val declaredProperties: Array[AnnotationProperty] = collectProperties(underlying.declaredFields, underlying.declaredMethods)
+  lazy val declaredProperties: Array[AnnotationProperty] =
+    collectProperties(underlying.declaredFields, underlying.declaredMethods)
 
   lazy val properties: Array[AnnotationProperty] = collectProperties(underlying.fields, underlying.methods)
 

@@ -2,6 +2,7 @@ package com.anjunar.scala.universe
 
 import com.anjunar.scala.universe.fixtures.HasCompanion
 import munit.FunSuite
+import java.lang.{String as LangString}
 
 class TypeResolverSpec extends FunSuite {
 
@@ -21,7 +22,7 @@ class TypeResolverSpec extends FunSuite {
   }
 
   test("companion lookup returns null when no companion exists") {
-    assertEquals(TypeResolver.companionClass(classOf[java.lang.String]), null)
-    assertEquals(TypeResolver.companionInstance[AnyRef](classOf[java.lang.String]), null)
+    assertEquals(TypeResolver.companionClass(classOf[LangString]), null)
+    assertEquals(TypeResolver.companionInstance[AnyRef](classOf[LangString]), null)
   }
 }

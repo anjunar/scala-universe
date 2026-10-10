@@ -5,7 +5,6 @@ import com.anjunar.scala.universe.{ResolvedClass, TypeResolver}
 import java.lang.annotation.Annotation
 import java.lang.reflect.Type
 import java.util
-import java.util.Objects
 
 object AnnotationIntrospector {
 
@@ -14,7 +13,7 @@ object AnnotationIntrospector {
   def create(aClass: ResolvedClass, annotationClass: Class[? <: Annotation]): AnnotationModel = {
     val key = (aClass, annotationClass)
     var model = cache.get(key)
-    if (Objects.isNull(model)) {
+    if (util.Objects.isNull(model)) {
       model = new AnnotationModel(aClass, annotationClass)
       cache.put(key, model)
     }

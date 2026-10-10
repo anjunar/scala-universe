@@ -5,23 +5,25 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 object TypeResolver {
-  
+
   val cache = new mutable.HashMap[Type, ResolvedClass]()
-  
+
   val companionCache = new mutable.HashMap[Class[?], Class[?]]()
-  
-  def companionClass(clazz : Class[?]) : Class[?] = {
-    companionCache.getOrElseUpdate(clazz, {
-      val companionClassName = clazz.getName + "$"
-      try {
-        Class.forName(companionClassName)
-      } catch {
-        case e: ClassNotFoundException => null
+
+  def companionClass(clazz: Class[?]): Class[?] = {
+    companionCache.getOrElseUpdate(
+      clazz, {
+        val companionClassName = clazz.getName + "$"
+        try {
+          Class.forName(companionClassName)
+        } catch {
+          case e: ClassNotFoundException => null
+        }
       }
-    })
+    )
   }
-  
-  inline def companionInstance[E](clazz : Class[?]) : E = {
+
+  inline def companionInstance[E](clazz: Class[?]): E = {
     try {
       val value = companionClass(clazz)
       if (value == null) {
@@ -36,11 +38,11 @@ object TypeResolver {
         }
       }
     } catch {
-      case e : NoSuchFieldException => null.asInstanceOf[E]
+      case e: NoSuchFieldException => null.asInstanceOf[E]
     }
   }
-  
-  def resolve(aType : Type) : ResolvedClass = {
+
+  def resolve(aType: Type): ResolvedClass = {
     val option = cache.get(aType)
     if (option.isDefined) {
       option.get
@@ -53,11 +55,11 @@ object TypeResolver {
 
   @tailrec
   def rawType(aType: Type): Class[?] = aType match {
-    case aClass: Class[?] => aClass
+    case aClass: Class[?]                     => aClass
     case parameterizedType: ParameterizedType => rawType(parameterizedType.getRawType)
-    case typeVariable: TypeVariable[?] => rawType(generateParameterizedType(typeVariable))
-    case wildCardType : WildcardType => rawType(wildCardType.getUpperBounds.head)
-    case _ => throw new IllegalStateException("Unexpected value: " + aType)
+    case typeVariable: TypeVariable[?]        => rawType(generateParameterizedType(typeVariable))
+    case wildCardType: WildcardType           => rawType(wildCardType.getUpperBounds.head)
+    case _                                    => throw new IllegalStateException("Unexpected value: " + aType)
   }
 
   private def generateParameterizedType(typeVariable: TypeVariable[?]): ParameterizedType = new ParameterizedType() {
@@ -67,6 +69,5 @@ object TypeResolver {
 
     override def getOwnerType: Type = null
   }
-
 
 }

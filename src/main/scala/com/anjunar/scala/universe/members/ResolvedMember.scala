@@ -5,4 +5,4 @@ import com.anjunar.scala.universe.annotations.Annotated
 
 import java.lang.reflect.{Member, Type}
 
-abstract class ResolvedMember(val underlying : Member, val owner : ResolvedClass) extends Annotated
+abstract class ResolvedMember(val underlying: Member, val owner: ResolvedClass) extends Annotated

@@ -7,5 +7,4 @@ class AbstractContainerNode[C <: AbstractNode[?]] extends AbstractNode[String]("
 
   val children: Seq[C] = Seq.empty
 
-
 }

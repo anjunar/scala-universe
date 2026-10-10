@@ -4,7 +4,8 @@ ThisBuild / organizationName := "Anjunar"
 ThisBuild / organizationHomepage := Some(url("https://github.com/anjunar"))
 ThisBuild / scalaVersion := "3.3.8"
 ThisBuild / homepage := Some(url("https://github.com/anjunar/scala-universe"))
-ThisBuild / description := "A JVM-based type introspection library for classes, generics, annotations, and bean-style property models."
+ThisBuild / description :=
+  "A JVM-based type introspection library for classes, generics, annotations, and bean-style property models."
 ThisBuild / licenses := List("MIT" -> url("https://opensource.org/licenses/MIT"))
 ThisBuild / scmInfo := Some(
   ScmInfo(

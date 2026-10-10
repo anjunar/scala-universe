@@ -24,7 +24,9 @@ class BeanModel(val underlying: ResolvedClass) extends Annotated {
           val group = matcher.group(1)
           val propertyName = group.substring(0, 1).toLowerCase + group.substring(1)
           val field = underlying.declaredFields.find((field: ResolvedField) => field.name == propertyName).orNull
-          val setterMethod = underlying.declaredMethods.find((method: ResolvedMethod) => method.name == ("set" + group) && method.parameters.length == 1).orNull
+          val setterMethod = underlying.declaredMethods.find((method: ResolvedMethod) =>
+            method.name == ("set" + group) && method.parameters.length == 1
+          ).orNull
           new BeanProperty(this, propertyName, field, getterMethod, setterMethod)
         } else {
           throw new IllegalStateException("no getter found " + getterMethod.name)
@@ -44,7 +46,9 @@ class BeanModel(val underlying: ResolvedClass) extends Annotated {
           val group = matcher.group(1)
           val propertyName = group.substring(0, 1).toLowerCase + group.substring(1)
           val field = underlying.fields.find((field: ResolvedField) => field.name == propertyName).orNull
-          val setterMethod = underlying.methods.find((method: ResolvedMethod) => method.name == ("set" + group) && method.parameters.length == 1).orNull
+          val setterMethod = underlying.methods.find((method: ResolvedMethod) =>
+            method.name == ("set" + group) && method.parameters.length == 1
+          ).orNull
           new BeanProperty(this, propertyName, field, getterMethod, setterMethod)
         } else {
           throw new IllegalStateException("no getter found " + getterMethod.name)
@@ -52,9 +56,10 @@ class BeanModel(val underlying: ResolvedClass) extends Annotated {
       })
   }
 
-  def findDeclaredProperty(name: String): BeanProperty = declaredProperties.find(property => property.name == name).orNull
+  def findDeclaredProperty(name: String): BeanProperty =
+    declaredProperties.find(property => property.name == name).orNull
 
-  def findProperty(name : String) : BeanProperty = properties.find(property => property.name == name).orNull
+  def findProperty(name: String): BeanProperty = properties.find(property => property.name == name).orNull
 
   override lazy val declaredAnnotations: Array[Annotation] = underlying.declaredAnnotations
   override lazy val annotations: Array[Annotation] = underlying.annotations
