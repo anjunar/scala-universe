@@ -1,4 +1,4 @@
-ThisBuild / version := "1.0.4"
+ThisBuild / version := "1.0.5-SNAPSHOT"
 ThisBuild / organization := "com.anjunar"
 ThisBuild / organizationName := "Anjunar"
 ThisBuild / organizationHomepage := Some(url("https://github.com/anjunar"))
@@ -33,6 +33,7 @@ ThisBuild / publishTo := {
 lazy val root = Project(id = "scala-universe-root", base = file("."))
   .settings(
     name := "scala-universe",
+    exportJars := false,
     moduleName := "scala-universe",
     libraryDependencies ++= Seq(
       "com.anjunar" % "scala-reflect_3" % "1.1.4",

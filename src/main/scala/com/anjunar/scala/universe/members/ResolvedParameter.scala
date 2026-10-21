@@ -11,8 +11,22 @@ class ResolvedParameter(val underlying: Parameter, owner: ResolvedExecutable) ex
 
   lazy val name: String = underlying.getName
 
-  lazy val parameterType: ResolvedClass =
-    TypeResolver.resolve(TypeToken.of(owner.owner.underlying).resolveType(underlying.getParameterizedType).getType)
+  lazy val parameterType: ResolvedClass = {
+    // Scala trait forwarders can erase a concrete inherited binding to Object (or a raw collection).
+    // Use the overridden generic declaration in its already resolved owner context.
+    val inherited = owner match {
+      case method: ResolvedMethod if underlying.getParameterizedType.isInstanceOf[Class[?]] =>
+        val index = method.parameters.indexOf(this)
+        method.overrides.iterator
+          .map(_.parameters(index))
+          .find(parameter => !parameter.underlying.getParameterizedType.isInstanceOf[Class[?]])
+          .map(_.parameterType)
+      case _ => None
+    }
+    inherited.getOrElse(
+      TypeResolver.resolve(TypeToken.of(owner.owner.underlying).resolveType(underlying.getParameterizedType).getType)
+    )
+  }
 
   override lazy val declaredAnnotations: Array[Annotation] = underlying.getDeclaredAnnotations
 

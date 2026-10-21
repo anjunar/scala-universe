@@ -4,7 +4,7 @@ import com.anjunar.scala.universe.{ResolvedClass, TypeResolver}
 import com.google.common.reflect.TypeToken
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.{Method, ParameterizedType}
+import java.lang.reflect.Method
 
 class ResolvedMethod(override val underlying: Method, owner: ResolvedClass)
     extends ResolvedExecutable(underlying, owner) {
@@ -22,7 +22,10 @@ class ResolvedMethod(override val underlying: Method, owner: ResolvedClass)
 
   lazy val returnType: ResolvedClass = {
     if (underlying.getGenericReturnType.isInstanceOf[Class[?]]) {
-      val genericInfo = overrides.find(method => method.returnType.underlying.isInstanceOf[ParameterizedType]).orNull
+      val genericInfo = overrides.find(method =>
+        method.underlying.getReturnType == underlying.getReturnType &&
+          !method.underlying.getGenericReturnType.isInstanceOf[Class[?]]
+      ).orNull
       if (genericInfo != null) {
         genericInfo.returnType
       } else {
