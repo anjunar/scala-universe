@@ -36,7 +36,7 @@ lazy val root = Project(id = "scala-universe-root", base = file("."))
     exportJars := false,
     moduleName := "scala-universe",
     libraryDependencies ++= Seq(
-      "com.anjunar" % "scala-reflect_3" % "1.1.4",
+      "com.anjunar" % "scala-reflect_3" % "1.1.5-SNAPSHOT",
       "com.google.guava" % "guava" % "33.5.0-jre",
       "jakarta.enterprise" % "jakarta.enterprise.cdi-api" % "4.1.0",
       "org.scalameta" %% "munit" % "1.1.1" % Test
