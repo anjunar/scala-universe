@@ -131,3 +131,8 @@ Scala Universe is available under the [MIT License](LICENSE).
 Resolved parameters and results now recover generic bindings erased by Scala trait forwarders or raw Java overrides from their existing overridden declaration. Concrete covariant return types stay concrete. This changes metadata accuracy without introducing a second type model or changing the public resolution API.
 
 Validate with `sbtn "testOnly com.anjunar.scala.universe.*"` and prepare the ordinary local artifact with `sbtn publishLocal`. The development build uses sbt 2.0.11, matching the consuming stack, to avoid the older Windows compiler-bridge file-lock failures. Stable installation examples above still refer to the published release.
+
+The snapshot also makes the type, companion, introspector and annotation-index caches concurrent maps, so types may
+be resolved from request threads without a startup warm-up; the 1.0.4 limit above no longer applies. The companion
+class is loaded through the class loader of the class it belongs to. The artifact no longer declares Logback, SLF4J
+and scala-logging, which none of its code used; applications that relied on them transitively declare them themselves.

@@ -1,15 +1,17 @@
 package com.anjunar.scala.universe
 
-import com.anjunar.scala.universe.annotations.ResolvedAnnotation
+import com.anjunar.scala.universe.annotations.{Annotated, ResolvedAnnotation}
 import com.google.common.reflect.ClassPath
 import jakarta.enterprise.event.Observes
 import jakarta.enterprise.inject.spi.{AfterDeploymentValidation, Extension, ProcessAnnotatedType}
 
 import java.lang.annotation.Annotation
+import java.util.concurrent.ConcurrentHashMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.*
 
+/** As a CDI extension, indexes the annotations of every bean class once the deployment is validated. */
 class ClassPathResolver extends Extension {
 
   val collectedClasses: ListBuffer[ResolvedClass] = ListBuffer.empty
@@ -27,22 +29,21 @@ class ClassPathResolver extends Extension {
 
 object ClassPathResolver {
 
-  private val annotations: mutable.Map[Class[? <: Annotation], mutable.Set[ResolvedAnnotation[?]]] =
-    new mutable.HashMap[Class[? <: Annotation], mutable.Set[ResolvedAnnotation[?]]]()
+  private val annotations = new ConcurrentHashMap[Class[? <: Annotation], mutable.Set[ResolvedAnnotation[?]]]()
 
-  def findAnnotation[A <: Annotation](clazz: Class[A]): mutable.Set[ResolvedAnnotation[A]] =
-    annotations(clazz).asInstanceOf[mutable.Set[ResolvedAnnotation[A]]]
+  /** Every indexed occurrence of an annotation. An annotation that was never indexed is a NoSuchElementException. */
+  def findAnnotation[A <: Annotation](clazz: Class[A]): mutable.Set[ResolvedAnnotation[A]] = {
+    val found = annotations.get(clazz)
+    if (found == null) throw new NoSuchElementException(s"Annotation ${clazz.getName} was not indexed")
+    found.asInstanceOf[mutable.Set[ResolvedAnnotation[A]]]
+  }
 
   def process(packagePrefix: String, classLoader: ClassLoader): Set[ResolvedClass] = {
     val classPath = ClassPath.from(classLoader)
 
     val classes = classPath.getAllClasses.asScala
       .filter(info => info.getPackageName.startsWith(packagePrefix))
-      .map(info => {
-        val clazz = info.load()
-
-        TypeResolver.resolve(clazz)
-      })
+      .map(info => TypeResolver.resolve(info.load()))
       .toSet
 
     annotationIndex(classes)
@@ -50,48 +51,26 @@ object ClassPathResolver {
     classes
   }
 
-  private def annotationIndex(classes: Set[ResolvedClass]): Unit = {
-    classes.foreach(clazz => {
-      clazz.declaredAnnotations.foreach(annotation => {
-        val resolvedAnnotations = annotations.getOrElseUpdate(annotation.annotationType(), mutable.HashSet())
-        resolvedAnnotations.addOne(ResolvedAnnotation(annotation, clazz))
-      })
+  private def annotationIndex(classes: Set[ResolvedClass]): Unit =
+    classes.foreach { clazz =>
+      clazz.declaredAnnotations.foreach(index(_, clazz))
 
-      clazz.declaredConstructors.foreach(constructor => {
-        constructor.declaredAnnotations.foreach(annotation => {
-          val resolvedAnnotations = annotations.getOrElseUpdate(annotation.annotationType(), mutable.HashSet())
-          resolvedAnnotations.addOne(ResolvedAnnotation(annotation, constructor))
-        })
+      clazz.declaredConstructors.foreach { constructor =>
+        constructor.declaredAnnotations.foreach(index(_, constructor))
+        constructor.parameters.foreach(parameter => parameter.declaredAnnotations.foreach(index(_, parameter)))
+      }
 
-        constructor.parameters.foreach(parameter => {
-          parameter.declaredAnnotations.foreach(annotation => {
-            val resolvedAnnotations = annotations.getOrElseUpdate(annotation.annotationType(), mutable.HashSet())
-            resolvedAnnotations.addOne(ResolvedAnnotation(annotation, parameter))
-          })
-        })
-      })
+      clazz.declaredFields.foreach(field => field.declaredAnnotations.foreach(index(_, field)))
 
-      clazz.declaredFields.foreach(field => {
-        field.declaredAnnotations.foreach(annotation => {
-          val resolvedAnnotations = annotations.getOrElseUpdate(annotation.annotationType(), mutable.HashSet())
-          resolvedAnnotations.addOne(ResolvedAnnotation(annotation, field))
-        })
-      })
+      clazz.declaredMethods.foreach { method =>
+        method.declaredAnnotations.foreach(index(_, method))
+        method.parameters.foreach(parameter => parameter.declaredAnnotations.foreach(index(_, parameter)))
+      }
+    }
 
-      clazz.declaredMethods.foreach(method => {
-        method.declaredAnnotations.foreach(annotation => {
-          val resolvedAnnotations = annotations.getOrElseUpdate(annotation.annotationType(), mutable.HashSet())
-          resolvedAnnotations.addOne(ResolvedAnnotation(annotation, method))
-        })
+  private def index(annotation: Annotation, target: Annotated): Unit =
+    annotations
+      .computeIfAbsent(annotation.annotationType(), _ => ConcurrentHashMap.newKeySet[ResolvedAnnotation[?]]().asScala)
+      .addOne(ResolvedAnnotation(annotation, target))
 
-        method.parameters.foreach(parameter => {
-          parameter.declaredAnnotations.foreach(annotation => {
-            val resolvedAnnotations = annotations.getOrElseUpdate(annotation.annotationType(), mutable.HashSet())
-            resolvedAnnotations.addOne(ResolvedAnnotation(annotation, parameter))
-          })
-        })
-      })
-
-    })
-  }
 }

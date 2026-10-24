@@ -1,27 +1,27 @@
 package com.anjunar.scala.universe
 
 import java.lang.reflect.{ParameterizedType, Type, TypeVariable, WildcardType}
+import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 object TypeResolver {
 
-  val cache = new mutable.HashMap[Type, ResolvedClass]()
+  // A ResolvedClass defers all its work, so concurrent first requests for a type may race without harm.
+  private val cache = new ConcurrentHashMap[Type, ResolvedClass]()
 
-  val companionCache = new mutable.HashMap[Class[?], Class[?]]()
+  private val companionCache = new ConcurrentHashMap[Class[?], Option[Class[?]]]()
 
-  def companionClass(clazz: Class[?]): Class[?] = {
-    companionCache.getOrElseUpdate(
-      clazz, {
-        val companionClassName = clazz.getName + "$"
+  /** The Scala companion class `Name$` of a class, loaded next to it, or null when there is none. */
+  def companionClass(clazz: Class[?]): Class[?] =
+    companionCache.computeIfAbsent(
+      clazz,
+      value =>
         try {
-          Class.forName(companionClassName)
+          Some(Class.forName(value.getName + "$", true, value.getClassLoader))
         } catch {
-          case e: ClassNotFoundException => null
+          case _: ClassNotFoundException => None
         }
-      }
-    )
-  }
+    ).orNull
 
   inline def companionInstance[E](clazz: Class[?]): E = {
     try {
@@ -42,16 +42,8 @@ object TypeResolver {
     }
   }
 
-  def resolve(aType: Type): ResolvedClass = {
-    val option = cache.get(aType)
-    if (option.isDefined) {
-      option.get
-    } else {
-      val resolvedClass = new ResolvedClass(aType)
-      cache.put(aType, resolvedClass)
-      resolvedClass
-    }
-  }
+  /** One ResolvedClass per type for the lifetime of the program. */
+  def resolve(aType: Type): ResolvedClass = cache.computeIfAbsent(aType, value => new ResolvedClass(value))
 
   @tailrec
   def rawType(aType: Type): Class[?] = aType match {

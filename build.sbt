@@ -39,10 +39,6 @@ lazy val root = Project(id = "scala-universe-root", base = file("."))
       "com.anjunar" % "scala-reflect_3" % "1.1.4",
       "com.google.guava" % "guava" % "33.5.0-jre",
       "jakarta.enterprise" % "jakarta.enterprise.cdi-api" % "4.1.0",
-      "ch.qos.logback" % "logback-classic" % "1.5.32",
-      "org.slf4j" % "slf4j-api" % "2.0.17",
-      "org.slf4j" % "jul-to-slf4j" % "2.0.17",
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6",
       "org.scalameta" %% "munit" % "1.1.1" % Test
     )
   )

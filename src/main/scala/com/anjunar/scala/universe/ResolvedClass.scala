@@ -17,14 +17,17 @@ class ResolvedClass(val underlying: Type) extends Annotated {
 
   lazy val raw: Class[?] = TypeResolver.rawType(underlying)
 
+  /** This type, then each superclass and its interfaces, all resolved against this type; Object is left out. */
   lazy val hierarchy: Array[ResolvedClass] = {
+    val token = TypeToken.of(underlying)
     val result = ArrayBuffer[ResolvedClass]()
     var cursor: Type = underlying
     while (cursor != null) {
-      result.addOne(TypeResolver.resolve(TypeToken.of(underlying).resolveType(cursor).getType))
-      val rawClass = TypeResolver.rawType(TypeToken.of(underlying).resolveType(cursor).getType)
+      val resolved = token.resolveType(cursor).getType
+      result.addOne(TypeResolver.resolve(resolved))
+      val rawClass = TypeResolver.rawType(resolved)
       rawClass.getGenericInterfaces.foreach(interface =>
-        result.addOne(TypeResolver.resolve(TypeToken.of(underlying).resolveType(interface).getType))
+        result.addOne(TypeResolver.resolve(token.resolveType(interface).getType))
       )
       cursor = rawClass.getGenericSuperclass
       if (cursor == classOf[Object]) {
@@ -92,12 +95,7 @@ class ResolvedClass(val underlying: Type) extends Annotated {
       case e: NoSuchMethodException => null
     }
 
-  def findField(name: String): ResolvedField =
-    try {
-      fields.find(resolvedField => resolvedField.name == name).orNull
-    } catch {
-      case e: NoSuchFieldException => null
-    }
+  def findField(name: String): ResolvedField = fields.find(resolvedField => resolvedField.name == name).orNull
 
   def findConstructor(args: Class[?]*): ResolvedConstructor = {
     try {
@@ -128,9 +126,7 @@ class ResolvedClass(val underlying: Type) extends Annotated {
       underlying == that.underlying
     case _ => false
 
-  override def hashCode(): Int =
-    val state = Seq(underlying)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  override def hashCode(): Int = underlying.hashCode()
 
   override def toString = s"ResolvedClass($name)"
 }

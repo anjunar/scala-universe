@@ -7,6 +7,7 @@ import com.google.common.reflect.TypeToken
 
 import java.lang.annotation.Annotation
 
+/** A property joined from its field, getter and setter; each of the three may be absent. */
 class AbstractProperty(
   val name: String,
   val field: ResolvedField,
@@ -14,13 +15,8 @@ class AbstractProperty(
   val setter: ResolvedMethod
 ) extends Annotated {
 
-  def get(instance: AnyRef): Any = {
-    if (getter == null) {
-      field.get(instance)
-    } else {
-      getter.invoke(instance)
-    }
-  }
+  def get(instance: AnyRef): Any =
+    if (getter == null) field.get(instance) else getter.invoke(instance)
 
   def set(instance: AnyRef, value: Any): Unit = {
     if (setter == null) {
@@ -29,55 +25,19 @@ class AbstractProperty(
     setter.invoke(instance, value)
   }
 
-  def propertyType: ResolvedClass = {
-    if (getter == null) {
-      TypeResolver.resolve(TypeToken.of(field.fieldType.underlying).wrap().getType)
-    } else {
-      TypeResolver.resolve(TypeToken.of(getter.returnType.underlying).wrap().getType)
-    }
+  /** The declared type as seen from the owner, boxed: the getter's return type, otherwise the field's type. */
+  lazy val propertyType: ResolvedClass = {
+    val declared = if (getter == null) field.fieldType else getter.returnType
+    TypeResolver.resolve(TypeToken.of(declared.underlying).wrap().getType)
   }
 
   val isWriteable: Boolean = setter != null
 
-  override lazy val declaredAnnotations: Array[Annotation] = {
-    val fieldAnnotation: Array[Annotation] = if (field == null) {
-      Array()
-    } else {
-      field.declaredAnnotations
-    }
+  private def members: Array[Annotated] = Array[Annotated](field, getter, setter).filter(_ != null)
 
-    val setterAnnotation: Array[Annotation] = if (setter == null) {
-      Array()
-    } else {
-      setter.declaredAnnotations
-    }
+  override lazy val declaredAnnotations: Array[Annotation] = members.flatMap(_.declaredAnnotations)
 
-    val getterAnnotation: Array[Annotation] = getter.declaredAnnotations
-
-    fieldAnnotation ++ getterAnnotation ++ setterAnnotation
-  }
-
-  override lazy val annotations: Array[Annotation] = {
-    val fieldAnnotation: Array[Annotation] = if (field == null) {
-      Array()
-    } else {
-      field.annotations
-    }
-
-    val setterAnnotation: Array[Annotation] = if (setter == null) {
-      Array()
-    } else {
-      setter.annotations
-    }
-
-    val getterAnnotation: Array[Annotation] = if (getter == null) {
-      Array()
-    } else {
-      getter.annotations
-    }
-
-    fieldAnnotation ++ getterAnnotation ++ setterAnnotation
-  }
+  override lazy val annotations: Array[Annotation] = members.flatMap(_.annotations)
 
   override def toString = (if isWriteable then s"write $name" else s"read $name") + s": $propertyType"
 

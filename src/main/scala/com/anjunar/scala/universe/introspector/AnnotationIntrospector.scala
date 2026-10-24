@@ -4,21 +4,15 @@ import com.anjunar.scala.universe.{ResolvedClass, TypeResolver}
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Type
-import java.util
+import java.util.concurrent.ConcurrentHashMap
 
 object AnnotationIntrospector {
 
-  private val cache = new util.HashMap[(ResolvedClass, Class[? <: Annotation]), AnnotationModel]
+  private val cache = new ConcurrentHashMap[(ResolvedClass, Class[? <: Annotation]), AnnotationModel]()
 
-  def create(aClass: ResolvedClass, annotationClass: Class[? <: Annotation]): AnnotationModel = {
-    val key = (aClass, annotationClass)
-    var model = cache.get(key)
-    if (util.Objects.isNull(model)) {
-      model = new AnnotationModel(aClass, annotationClass)
-      cache.put(key, model)
-    }
-    model
-  }
+  /** One model per class and annotation for the lifetime of the program. */
+  def create(aClass: ResolvedClass, annotationClass: Class[? <: Annotation]): AnnotationModel =
+    cache.computeIfAbsent((aClass, annotationClass), key => new AnnotationModel(key._1, key._2))
 
   def createWithType(aType: Type, annotationClass: Class[? <: Annotation]): AnnotationModel =
     create(TypeResolver.resolve(aType), annotationClass)

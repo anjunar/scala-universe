@@ -11,14 +11,9 @@ class ResolvedMethod(override val underlying: Method, owner: ResolvedClass)
 
   lazy val name: String = underlying.getName
 
-  lazy val overrides: Array[ResolvedMethod] = owner.hierarchy.drop(1)
-    .filter(aClass =>
-      try
-        aClass.findMethod(name, underlying.getParameterTypes*) != null
-      catch
-        case e: NoSuchMethodException => false
-    )
-    .map(aClass => aClass.findMethod(name, underlying.getParameterTypes*))
+  /** The methods with this signature in the supertypes, which this one overrides. */
+  lazy val overrides: Array[ResolvedMethod] =
+    owner.hierarchy.drop(1).flatMap(aClass => Option(aClass.findMethod(name, underlying.getParameterTypes*)))
 
   lazy val returnType: ResolvedClass = {
     if (underlying.getGenericReturnType.isInstanceOf[Class[?]]) {
