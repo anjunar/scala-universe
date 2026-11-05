@@ -5,7 +5,7 @@ fields, methods and annotations share one model.
 
 | Version | Platform | Scala | License |
 | --- | --- | --- | --- |
-| 1.0.4 | JVM | 3.3 | MIT |
+| 1.0.5 | JVM | 3.3 | MIT |
 
 Documentation: [English](https://docs.anjunar.com/en/scala-universe) · [Deutsch](https://docs.anjunar.com/de/scala-universe)
 Website: [English](https://anjunar.com/en/scala-universe) · [Deutsch](https://anjunar.com/de/scala-universe)
@@ -16,7 +16,7 @@ One artifact for the JVM. It brings Guava's `TypeToken` for generic resolution a
 class path extension.
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scala-universe" % "1.0.4"
+libraryDependencies += "com.anjunar" %% "scala-universe" % "1.0.5"
 ```
 
 ## First example
@@ -89,9 +89,6 @@ through `TypeResolver`, reads `@JsonbProperty` members through `AnnotationIntros
   whose raw class says nothing about its values; start from a concrete class such as `UserRepository`.
 - `constructors` includes the superclasses' constructors, which cannot create the subclass. Use
   `declaredConstructors` or `findConstructor` to create instances.
-- In 1.0.4 the type, companion and introspector caches are plain hash maps without synchronization. In a server,
-  resolve the types you map during startup, before requests arrive. Reading cached types is safe as long as nothing
-  writes at the same time.
 - `ClassPathResolver.findAnnotation` throws `NoSuchElementException` for an annotation that was never indexed. Run
   `process`, or let the CDI extension run, before looking anything up.
 
@@ -122,17 +119,17 @@ Credentials come from `SONATYPE_CENTRAL_USERNAME` and `SONATYPE_CENTRAL_PASSWORD
 stops after validation so the release is published by hand in the portal; `-SkipPublishSigned`
 (`SKIP_PUBLISH_SIGNED=1`) uploads an existing staging directory again.
 
-## License
-
-Scala Universe is available under the [MIT License](LICENSE).
-
-## Local development preview 1.0.5-SNAPSHOT
+## Changes in 1.0.5
 
 Resolved parameters and results now recover generic bindings erased by Scala trait forwarders or raw Java overrides from their existing overridden declaration. Concrete covariant return types stay concrete. This changes metadata accuracy without introducing a second type model or changing the public resolution API.
 
 Validate with `sbtn "testOnly com.anjunar.scala.universe.*"` and prepare the ordinary local artifact with `sbtn publishLocal`. The development build uses sbt 2.0.11, matching the consuming stack, to avoid the older Windows compiler-bridge file-lock failures. Stable installation examples above still refer to the published release.
 
-The snapshot also makes the type, companion, introspector and annotation-index caches concurrent maps, so types may
-be resolved from request threads without a startup warm-up; the 1.0.4 limit above no longer applies. The companion
+Version 1.0.5 also makes the type, companion, introspector and annotation-index caches concurrent maps, so types may
+be resolved from request threads without a startup warm-up. The companion
 class is loaded through the class loader of the class it belongs to. The artifact no longer declares Logback, SLF4J
 and scala-logging, which none of its code used; applications that relied on them transitively declare them themselves.
+
+## License
+
+Scala Universe is available under the [MIT License](LICENSE).
